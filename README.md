@@ -11,6 +11,10 @@ A general-purpose starting point for building sites with [EmDash](https://github
 - Seed data with demo content
 - D1 database and R2 storage pre-configured
 
+## Mermaid diagrams
+
+The site includes a native Mermaid plugin. In the Portable Text editor, type `/` and select **Mermaid diagram** to add a diagram. Enter Mermaid syntax in **Diagram source** and an optional accessible description. The published page renders the diagram as SVG; if rendering fails or JavaScript is unavailable, the source remains visible.
+
 ## Pages
 
 | Page | Route |

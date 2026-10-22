@@ -1,0 +1,77 @@
+---
+const node = Astro.props.node as Record<string, unknown>;
+const source = typeof node.code === "string" ? node.code : "";
+const description = typeof node.alt === "string" ? node.alt : "";
+---
+
+<figure class="mermaid-diagram" data-mermaid-block data-mermaid-label={description}>
+	<pre class="mermaid-source">{source}</pre>
+	<p class="mermaid-error" data-mermaid-error role="status" hidden>
+		This diagram could not be rendered. Mermaid source is shown above.
+	</p>
+</figure>
+
+<script>
+	let mermaidInitialized = false;
+
+	async function renderDiagrams() {
+		const blocks = document.querySelectorAll<HTMLElement>(
+			"[data-mermaid-block]:not([data-mermaid-rendered])",
+		);
+		if (blocks.length === 0) return;
+
+		const { default: mermaid } = await import("mermaid");
+		if (!mermaidInitialized) {
+			mermaid.initialize({
+				startOnLoad: false,
+				securityLevel: "strict",
+				theme: "default",
+			});
+			mermaidInitialized = true;
+		}
+
+		for (const block of blocks) {
+			block.dataset.mermaidRendered = "true";
+			const source = block.querySelector("pre")?.textContent ?? "";
+
+			try {
+				const { svg } = await mermaid.render(`emdash-mermaid-${crypto.randomUUID()}`, source);
+				const parsed = new DOMParser().parseFromString(svg, "image/svg+xml");
+				const diagram = parsed.documentElement;
+
+				if (diagram.localName !== "svg" || parsed.querySelector("parsererror")) {
+					throw new Error("Mermaid returned invalid SVG");
+				}
+
+				diagram.setAttribute("role", "img");
+				diagram.setAttribute("aria-label", block.dataset.mermaidLabel || "Mermaid diagram");
+				block.replaceChildren(document.importNode(diagram, true));
+			} catch (error) {
+				const message = block.querySelector<HTMLElement>("[data-mermaid-error]");
+				if (message) message.hidden = false;
+				console.error("Failed to render Mermaid diagram", error);
+			}
+		}
+	}
+
+	void renderDiagrams();
+	document.addEventListener("astro:page-load", renderDiagrams);
+</script>
+
+<style>
+	.mermaid-diagram {
+		margin-block: 1.5rem;
+		overflow-x: auto;
+	}
+
+	.mermaid-diagram :global(svg) {
+		display: block;
+		height: auto;
+		margin-inline: auto;
+		max-width: 100%;
+	}
+
+	.mermaid-source {
+		white-space: pre-wrap;
+	}
+</style>
